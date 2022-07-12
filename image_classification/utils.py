@@ -87,32 +87,122 @@ def dict_mul(x, a):
 def dict_clone(x):
     return {k: x[k].clone() for k in x}
 
-def twolayer_mm(m1, m2):
+def twolayer_linearsample(m1, m2, epoch):
+
     m2 = torch.cat([m2, m2], dim=0)
     m1_len = torch.linalg.norm(m1, dim=1)
     m2_len = torch.linalg.norm(m2, dim=1)
     vec_norm = m1_len.mul(m2_len)
-    torch.set_printoptions(profile="full")
-    normalized_norm = torch.clamp(m1.shape[0] * vec_norm / (2 * vec_norm.sum()), 0, 1)
-    mid = torch.sort(normalized_norm)
-    mid = mid[0][int(m2.shape[0] / 2)]
-    index = [x for x in range(len(normalized_norm)) if normalized_norm[x] >= mid]
-    # index = [x for x in range(len(normalized_norm))]
-    m1, m2 = m1[index, :], m2[index, :]
-    output = m1.t().mm(m2)
-    return output
 
-def twolayer_convsample(m1, m2):
+    mid = torch.sort(vec_norm)
+    mid = mid[0][epoch]
+    index = [x for x in range(len(vec_norm)) if vec_norm[x] >= mid]
+
+    # index, norm_x = sample_index_from_bernouli(vec_norm)
+    # m1 = m1 / norm_x.unsqueeze(1)
+
+    m1, m2 = m1[index, :], m2[index, :]
+
+    return m1, m2
+
+def twolayer_convsample(m1, m2, epoch):
     # print(m1.mean(), m1.max(), m1.min(), m2.mean(), m2.max(), m2.min())
     m1_len, m2_len = m1.mean(dim=(2, 3)).square().sum(dim=1), m2.sum(dim=(2, 3)).square().sum(dim=1)
     vec_norm = m1_len.mul(m2_len)
-    torch.set_printoptions(profile="full")
-    normalized_norm = torch.clamp(m1.shape[0] * vec_norm / (2 * vec_norm.sum()), 0, 1)
-    mid = torch.sort(normalized_norm)
-    mid = mid[0][int(m2.shape[0] / 2)]
-    index = [x for x in range(len(normalized_norm)) if normalized_norm[x] >= mid]
-    # index = [x for x in range(len(normalized_norm))]
+    
+    mid = torch.sort(vec_norm)
+    mid = mid[0][epoch]
+    index = torch.nonzero((vec_norm >= mid)).squeeze()
+
+    # index = [x for x in range(len(vec_norm)) if vec_norm[x] >= mid]
+
+    # index, norm_x = sample_index_from_bernouli(vec_norm)
+    # m1 = m1 / norm_x.unsqueeze(1).unsqueeze(2).unsqueeze(3)
+
     m1, m2 = m1[index, :], m2[index, :]
+
     return m1, m2
+
+def sample_index_from_bernouli(x):
+    # print(x.max(), x.min(), x.mean())
+    len_x = len(x)
+    norm_x = x * len_x / (2 * x.sum())
+    # print(norm_x)
+    typeflag ='NoNoNo'
+    randflag = torch.rand(1)
+
+    cnt = 0
+    while norm_x.max() > 1 and cnt < len_x / 2:
+        small_index = torch.nonzero((norm_x < 1)).squeeze()
+        small_value = norm_x[small_index]
+        cnt = len_x - len(small_index)
+        norm_x = torch.clamp(norm_x, 0, 1)
+        if small_value.max() == 0 and small_value.min() == 0:
+            break
+        # print(len(x), cnt)
+        small_value = small_value * (len_x // 2 - cnt) / small_value.sum()
+        norm_x[small_index] = small_value
+
+        # print("small index is {}, \n small value is {}, cnt is {}".format(small_index, small_value, cnt))
+        # print("norm x is {}".format(norm_x))
+        # print("sorted norm x is {}".format(norm_x.sort()[0]))
+        # print("small index is {}, \n small value is {}, cnt is {}".format(small_index, small_value, cnt))
+        # print("sum up to {}".format(norm_x.sum()))
+        # print("cnt is {}".format(cnt))
+        # print("_______________________________________________________________________________________________________")
+        # exit(0)
+    if norm_x.max() > 1 or norm_x.min() < 0:
+        typeflag = 'debug'
+    if typeflag == 'debug':
+        with open("debug.txt", "a") as f:
+            f.write("raw {} is {}\n".format(randflag, x))
+        with open("debug.txt", "a") as f:
+            f.write("the after norm {} is {}\n".format(randflag, norm_x))
+    # print("norm x is {}".format(norm_x))
+    sample_index = torch.bernoulli(norm_x)
+    # print("sample_index is {}
+    if typeflag == 'debug':
+        with open("debug.txt", "a") as f:
+            f.write("sample index {} is {}\n".format(randflag, sample_index))
+    # index = [x for x in range(len(sample_index)) if sample_index[x] == 1]
+    # try:
+    index = torch.nonzero((sample_index == 1)).squeeze()
+    if typeflag == 'debug':
+        with open("debug.txt", "a") as f:
+            f.write("index {} is {}\n".format(randflag, index))
+    print("bernoulli", x, '\n', index, '\n', norm_x, '\n', len(index))
+    return index, norm_x
+
+def twolayer_linearsample_debug(m1, m2, epoch):
+
+    m2 = torch.cat([m2, m2], dim=0)
+    m1_len = torch.linalg.norm(m1, dim=1)
+    m2_len = torch.linalg.norm(m2, dim=1)
+    vec_norm = m1_len.mul(m2_len)
+
+    mid = torch.sort(vec_norm)
+    mid = mid[0][epoch]
+    index = [x for x in range(len(vec_norm)) if vec_norm[x] >= mid]
+
+    m1, m2 = m1[index, :], m2[index, :]
+
+    return m1, m2
+
+def twolayer_convsample_debug(m1, m2, epoch):
+    # print(m1.mean(), m1.max(), m1.min(), m2.mean(), m2.max(), m2.min())
+    m1_len, m2_len = m1.mean(dim=(2, 3)).square().sum(dim=1), m2.sum(dim=(2, 3)).square().sum(dim=1)
+    vec_norm = m1_len.mul(m2_len)
+
+    mid = torch.sort(vec_norm)
+    mid = mid[0][epoch]
+    index = [x for x in range(len(vec_norm)) if vec_norm[x] >= mid]
+
+    print("epoch first ", index)
+
+    m1, m2 = m1[index, :], m2[index, :]
+
+    return m1, m2
+
+
 
 

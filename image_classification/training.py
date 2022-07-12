@@ -143,6 +143,7 @@ def lr_cosine_policy(base_lr, warmup_length, epochs, logger=None):
             e = epoch - warmup_length
             es = epochs - warmup_length
             lr = 0.5 * (1 + np.cos(np.pi * e / es)) * base_lr
+
         return lr
 
     return lr_policy(_lr_fn, logger=logger)
@@ -332,7 +333,7 @@ def train_loop(model_and_loss, optimizer, lr_scheduler, train_loader, val_loader
                should_backup_checkpoint, use_amp=False,
                batch_size_multiplier=1,
                best_prec1=0, start_epoch=0, prof=-1, skip_training=False, skip_validation=False, save_checkpoints=True,
-               checkpoint_dir='./', args=None):
+               checkpoint_dir='./', args=None, config=None):
     prec1 = -1
     valid_history, epoch_history = [], []
     epoch_iter = range(start_epoch, epochs)
@@ -340,6 +341,11 @@ def train_loop(model_and_loss, optimizer, lr_scheduler, train_loader, val_loader
         epoch_iter = logger.epoch_generator_wrapper(epoch_iter)
     for epoch in epoch_iter:
         print('Epoch ', epoch)
+        try:
+            os.remove("debug.txt")
+        except:
+            pass
+        config.epoch = epoch
         start = time.time()
         if not skip_training:
             train(train_loader, model_and_loss, optimizer, lr_scheduler, fp16, logger, epoch, use_amp=use_amp,

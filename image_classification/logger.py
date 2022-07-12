@@ -216,13 +216,13 @@ class JsonBackend(object):
 
 
 class StdOut1LBackend(object):
-    def __init__(self, iters, val_iters, epochs, log_level=0):
+    def __init__(self, iters, val_iters, start_epochs, end_epochs, log_level=0):
         self.level = log_level
         self.iteration = 0
         self.total_iterations = iters
         self.total_val_iterations = val_iters
-        self.epoch = 0
-        self.total_epochs = epochs
+        self.epoch = start_epochs
+        self.total_epochs = end_epochs
         self.iteration_metrics = {}
         self.epoch_metrics = {}
         self.mode = 'train'

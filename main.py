@@ -1,5 +1,6 @@
-import argparse
 import os
+# os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
+import argparse
 import shutil
 import time
 import random
@@ -58,13 +59,13 @@ def add_parser_arguments(parser):
                         help='model configs: ' +
                              ' | '.join(model_configs) + '(default: classic)')
 
-    parser.add_argument('-j', '--workers', default=1, type=int, metavar='N', # changed from 5 to 1
+    parser.add_argument('-j', '--workers', default=1, type=int, metavar='N',  # changed from 5 to 1
                         help='number of data loading workers (default: 5)')
-    parser.add_argument('--epochs', default=102, type=int, metavar='N',
+    parser.add_argument('--epochs', default=200, type=int, metavar='N',
                         help='number of total epochs to run')
     parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                         help='manual epoch number (useful on restarts)')
-    parser.add_argument('-b', '--batch-size', default=64, type=int,
+    parser.add_argument('-b', '--batch-size', default=128, type=int,
                         metavar='N', help='mini-batch size (default: 256) per gpu')
 
     parser.add_argument('--optimizer-batch-size', default=-1, type=int,
@@ -75,7 +76,7 @@ def add_parser_arguments(parser):
     parser.add_argument('--lr-schedule', default='cosine', type=str, metavar='SCHEDULE',
                         choices=['step', 'linear', 'cosine'])
 
-    parser.add_argument('--warmup', default=4, type=int,
+    parser.add_argument('--warmup', default=20, type=int,
                         metavar='E', help='number of warmup epochs')
 
     parser.add_argument('--label-smoothing', default=0.1, type=float,
@@ -113,7 +114,7 @@ def add_parser_arguments(parser):
 
     parser.add_argument("--local_rank", default=0, type=int)
 
-    parser.add_argument('--seed', default=None, type=int,
+    parser.add_argument('--seed', default=2022, type=int,
                         help='random seed used for np and pytorch')
 
     parser.add_argument('--gather-checkpoints', action='store_true',
@@ -300,7 +301,7 @@ def main(args):
             args.print_freq,
             [
                 log.JsonBackend(os.path.join(args.workspace, args.raport_file), log_level=1),
-                log.StdOut1LBackend(train_loader_len, val_loader_len, args.epochs, log_level=0),
+                log.StdOut1LBackend(train_loader_len, val_loader_len, args.start_epoch, args.epochs, log_level=0),
             ])
 
         for k, v in args.__dict__.items():
@@ -343,9 +344,10 @@ def main(args):
         args.fp16, logger, should_backup_checkpoint(args), use_amp=args.amp,
         batch_size_multiplier=batch_size_multiplier,
         start_epoch=args.start_epoch, best_prec1=best_prec1, prof=args.prof,
-        skip_training = args.evaluate, skip_validation = args.training_only,
+        skip_training=args.evaluate, skip_validation=args.training_only,
         # skip_training=True, skip_validation=True,
-        save_checkpoints=args.save_checkpoints and not args.evaluate, checkpoint_dir=args.workspace, args=args)
+        save_checkpoints=args.save_checkpoints and not args.evaluate, checkpoint_dir=args.workspace, args=args,
+        config=config)
     exp_duration = time.time() - exp_start_time
     if not torch.distributed.is_initialized() or torch.distributed.get_rank() == 0:
         logger.end()

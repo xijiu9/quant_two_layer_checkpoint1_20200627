@@ -5,7 +5,7 @@ import matplotlib
 
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
-from tqdm import tqdm
+from tqdm import tqdm, trange
 import numpy as np
 import pickle
 from matplotlib.colors import LogNorm
@@ -653,7 +653,74 @@ def variance_profile(model_and_loss, optimizer, val_loader, prefix='.', num_batc
                            ha="center", va="center")
 
     fig.savefig('variance_profile.pdf')
-
+#
+# def get_var(model_and_loss, optimizer, val_loader, num_batches=10000):
+#     if hasattr(model_and_loss.model, 'module'):
+#         m = model_and_loss.model.module
+#     else:
+#         m = model_and_loss.model
+#
+#     # Get top 10 batches
+#     m.set_debug(True)
+#     m.set_name()
+#     weight_names = [layer.layer_name for layer in m.linear_layers]
+#
+#     data_iter = enumerate(val_loader)
+#     inputs = []
+#     targets = []
+#     batch_grad = None
+#     quant_var = None
+#
+#     def bp(input, target):
+#         optimizer.zero_grad()
+#         loss, output = model_and_loss(input, target)
+#         loss.backward()
+#         torch.cuda.synchronize()
+#         grad = {layer.layer_name : layer.weight.grad.detach().cpu() for layer in m.linear_layers}
+#         return grad
+#
+#     cnt = 0
+#     for i, (input, target) in tqdm(data_iter):
+#         cnt += 1
+#
+#         inputs.append(input.clone())
+#         targets.append(target.clone())
+#
+#         # Deterministic
+#         config.quantize_gradient = False
+#         mean_grad = bp(input, target)
+#         batch_grad = dict_add(batch_grad, mean_grad)
+#
+#         if cnt == num_batches:
+#             break
+#
+#     num_batches = cnt
+#     batch_grad = dict_mul(batch_grad, 1.0 / num_batches)
+#
+#     def get_variance():
+#         total_var = None
+#         for i, input, target in tqdm(zip(range(num_batches), inputs, targets)):
+#             grad = bp(input, target)
+#             total_var = dict_add(total_var, dict_sqr(dict_minus(grad, batch_grad)))
+#
+#         grads = [total_var[k].sum() / num_batches for k in weight_names]
+#         return grads
+#
+#     config.quantize_gradient = True
+#     q_grads = get_variance()
+#     config.quantize_gradient = False
+#     s_grads = get_variance()
+#
+#     all_qg = 0
+#     all_sg = 0
+#     for i, k in enumerate(weight_names):
+#         qg = q_grads[i].sum()
+#         sg = s_grads[i].sum()
+#         all_qg += qg
+#         all_sg += sg
+#         print('{}, overall var = {}, quant var = {}, sample var = {}'.format(k, qg, qg-sg, sg))
+#
+#     print('Overall Var = {}, Quant Var = {}, Sample Var = {}'.format(all_qg, all_qg - all_sg, all_sg))
 
 def get_var(model_and_loss, optimizer, val_loader, num_batches=10000):
     if hasattr(model_and_loss.model, 'module'):
@@ -667,10 +734,6 @@ def get_var(model_and_loss, optimizer, val_loader, num_batches=10000):
     weight_names = [layer.layer_name for layer in m.linear_layers]
 
     data_iter = enumerate(val_loader)
-    inputs = []
-    targets = []
-    batch_grad = None
-    quant_var = None
 
     def bp(input, target):
         optimizer.zero_grad()
@@ -681,57 +744,43 @@ def get_var(model_and_loss, optimizer, val_loader, num_batches=10000):
         return grad
 
     cnt = 0
-    for i, (input, target) in tqdm(data_iter):
+    num_samples = 20
+    all_var = None
+    all_bias = None
+    for (input, target) in tqdm(val_loader):
         cnt += 1
 
-        inputs.append(input.clone())
-        targets.append(target.clone())
-
-        # Deterministic
         config.quantize_gradient = False
-        mean_grad = bp(input, target)
-        batch_grad = dict_add(batch_grad, mean_grad)
+        full_grad = bp(input, target)
 
-        if cnt == num_batches:
-            break
-
-    num_batches = cnt
-    batch_grad = dict_mul(batch_grad, 1.0 / num_batches)
-
-    def get_variance():
-        total_var = None
-        total_bias = None
-        for i, input, target in tqdm(zip(range(num_batches), inputs, targets)):
+        config.quantize_gradient = True
+        cur_var = None
+        cur_bias = None
+        for _ in range(num_samples):
             grad = bp(input, target)
-            total_var = dict_add(total_var, dict_sqr(dict_minus(grad, batch_grad)))
-            total_bias = dict_add(total_bias, dict_minus(grad, batch_grad))
+            cur_var = dict_add(cur_var, dict_sqr(dict_minus(grad, full_grad)))
+            cur_bias = dict_add(cur_bias, dict_minus(grad, full_grad))
 
-        grads = [total_var[k].sum() / num_batches for k in weight_names]
-        bias = [total_bias[k].sum() / num_batches for k in weight_names]
-        return grads, bias
+        var = [cur_var[k].sum() / num_samples for k in weight_names]
+        bias = [cur_bias[k].sum() / num_samples for k in weight_names]
 
-    config.quantize_gradient = True
-    q_grads, q_bias = get_variance()
+        try:
+            all_var = all_var + var
+            all_bias = all_bias + bias
+        except:
+            all_var = var
+            all_bias = bias
 
-    config.quantize_gradient = False
-    s_grads, s_bias = get_variance()
+    print("cnt is {}".format(cnt))
+    all_var, all_bias = [x / cnt for x in all_var], [x / cnt for x in all_bias]
 
-    all_qg = 0
-    all_sg = 0
-    all_qb = 0
-    all_sb = 0
+    all_qg, all_qb = 0, 0
     for i, k in enumerate(weight_names):
-        qg = q_grads[i].sum()
-        qb = q_bias[i].sum()
-        sg = s_grads[i].sum()
-        sb = s_bias[i].sum()
+        qg = all_var[i]
+        qb = all_bias[i]
         all_qg += qg
         all_qb += qb
-        all_sg += sg
-        all_sb += sb
-        print('{}, all var = {:.3e}, quant var = {:.3e}, sample var = {:.3e}, '
-              'quant bias = {:.3e}. average = {:.3e} / {:.3e}'.format(k, qg, qg - sg, sg, qb, s_bias[i].mean(), q_grads[i].mean()))
+        print('{}, quant var = {:.3e}, quant bias = {:.3e}'.format(k, qg, qb))
 
-    print('Overall Var = {:.3e}, Quant Var = {:.3e}, Sample Var = {:.3e}, quant bias = {:.3e}. '
-          'average = {:.3e} / {:.3e}'
-          .format(all_qg, all_qg - all_sg, all_sg, all_qb, all_sb.mean(), all_qb.mean()))
+    print('Overall Quant Var = {:.3e}, Quant bias = {:.3e}'
+          .format(all_qg, all_qb))
