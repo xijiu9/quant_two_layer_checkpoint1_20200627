@@ -1,0 +1,659 @@
+PreActResNet(
+  (conv1): QConv2d(
+    3, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+    (quantize_input): QuantMeasure()
+  )
+  (layer1): Sequential(
+    (0): PreActBlock(
+      (bn1): QBatchNorm2D(
+        16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        16, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        16, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+    )
+    (1): PreActBlock(
+      (bn1): QBatchNorm2D(
+        16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        16, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        16, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+    )
+    (2): PreActBlock(
+      (bn1): QBatchNorm2D(
+        16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        16, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        16, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+    )
+    (3): PreActBlock(
+      (bn1): QBatchNorm2D(
+        16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        16, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        16, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+    )
+    (4): PreActBlock(
+      (bn1): QBatchNorm2D(
+        16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        16, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        16, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+    )
+    (5): PreActBlock(
+      (bn1): QBatchNorm2D(
+        16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        16, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        16, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+    )
+    (6): PreActBlock(
+      (bn1): QBatchNorm2D(
+        16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        16, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        16, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+    )
+    (7): PreActBlock(
+      (bn1): QBatchNorm2D(
+        16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        16, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        16, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+    )
+    (8): PreActBlock(
+      (bn1): QBatchNorm2D(
+        16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        16, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        16, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+    )
+  )
+  (layer2): Sequential(
+    (0): PreActBlock(
+      (bn1): QBatchNorm2D(
+        16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        16, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (downsample): Sequential(
+        (0): QConv2d(
+          16, 32, kernel_size=(1, 1), stride=(2, 2), bias=False
+          (quantize_input): QuantMeasure()
+          (lsqweight): LSQPerTensor()
+          (lsqactive): LSQPerTensor()
+        )
+      )
+    )
+    (1): PreActBlock(
+      (bn1): QBatchNorm2D(
+        32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+    )
+    (2): PreActBlock(
+      (bn1): QBatchNorm2D(
+        32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+    )
+    (3): PreActBlock(
+      (bn1): QBatchNorm2D(
+        32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+    )
+    (4): PreActBlock(
+      (bn1): QBatchNorm2D(
+        32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+    )
+    (5): PreActBlock(
+      (bn1): QBatchNorm2D(
+        32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+    )
+    (6): PreActBlock(
+      (bn1): QBatchNorm2D(
+        32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+    )
+    (7): PreActBlock(
+      (bn1): QBatchNorm2D(
+        32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+    )
+    (8): PreActBlock(
+      (bn1): QBatchNorm2D(
+        32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+    )
+  )
+  (layer3): Sequential(
+    (0): PreActBlock(
+      (bn1): QBatchNorm2D(
+        32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        32, 64, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (downsample): Sequential(
+        (0): QConv2d(
+          32, 64, kernel_size=(1, 1), stride=(2, 2), bias=False
+          (quantize_input): QuantMeasure()
+          (lsqweight): LSQPerTensor()
+          (lsqactive): LSQPerTensor()
+        )
+      )
+    )
+    (1): PreActBlock(
+      (bn1): QBatchNorm2D(
+        64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+    )
+    (2): PreActBlock(
+      (bn1): QBatchNorm2D(
+        64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+    )
+    (3): PreActBlock(
+      (bn1): QBatchNorm2D(
+        64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+    )
+    (4): PreActBlock(
+      (bn1): QBatchNorm2D(
+        64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+    )
+    (5): PreActBlock(
+      (bn1): QBatchNorm2D(
+        64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+    )
+    (6): PreActBlock(
+      (bn1): QBatchNorm2D(
+        64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+    )
+    (7): PreActBlock(
+      (bn1): QBatchNorm2D(
+        64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+    )
+    (8): PreActBlock(
+      (bn1): QBatchNorm2D(
+        64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (bn2): QBatchNorm2D(
+        64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+        (quantize_input): QuantMeasure()
+      )
+      (relu): ReLU(inplace=True)
+      (conv1): QConv2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+      (conv2): QConv2d(
+        64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+        (quantize_input): QuantMeasure()
+        (lsqweight): LSQPerTensor()
+        (lsqactive): LSQPerTensor()
+      )
+    )
+  )
+  (bn): QBatchNorm2D(
+    64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True
+    (quantize_input): QuantMeasure()
+  )
+  (relu): ReLU(inplace=True)
+  (avgpool): AvgPool2d(kernel_size=8, stride=1, padding=0)
+  (fc): QLinear(
+    in_features=64, out_features=10, bias=True
+    (quantize_input): QuantMeasure()
+  )
+)

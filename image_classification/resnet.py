@@ -16,19 +16,19 @@ class ResNetBuilder(object):
         self.L = sum(version['layers'])
         self.M = version['block'].M
 
-    def conv(self, kernel_size, in_planes, out_planes, stride=1):
+    def conv(self, kernel_size, in_planes, out_planes, stride=1, first_or_last=False, symm=True):
         if kernel_size == 3:
             conv = self.config['conv'](in_planes, out_planes, kernel_size=3, stride=stride,
-                                       padding=1, bias=False)
+                                       padding=1, bias=False, first_or_last=first_or_last, symm=symm)
         elif kernel_size == 1:
             conv = self.config['conv'](in_planes, out_planes, kernel_size=1, stride=stride,
-                                       bias=False)
+                                       bias=False, first_or_last=first_or_last, symm=symm)
         elif kernel_size == 5:
             conv = self.config['conv'](in_planes, out_planes, kernel_size=5, stride=stride,
-                                       padding=2, bias=False)
+                                       padding=2, bias=False, first_or_last=first_or_last, symm=symm)
         elif kernel_size == 7:
             conv = self.config['conv'](in_planes, out_planes, kernel_size=7, stride=stride,
-                                       padding=3, bias=False)
+                                       padding=3, bias=False, first_or_last=first_or_last, symm=symm)
         else:
             return None
 
@@ -39,24 +39,24 @@ class ResNetBuilder(object):
 
         return conv
 
-    def conv3x3(self, in_planes, out_planes, stride=1):
+    def conv3x3(self, in_planes, out_planes, stride=1, first_or_last=False, symm=True):
         """3x3 convolution with padding"""
-        c = self.conv(3, in_planes, out_planes, stride=stride)
+        c = self.conv(3, in_planes, out_planes, stride=stride, first_or_last=first_or_last, symm=symm)
         return c
 
-    def conv1x1(self, in_planes, out_planes, stride=1):
+    def conv1x1(self, in_planes, out_planes, stride=1, first_or_last=False, symm=True):
         """1x1 convolution with padding"""
-        c = self.conv(1, in_planes, out_planes, stride=stride)
+        c = self.conv(1, in_planes, out_planes, stride=stride, first_or_last=first_or_last, symm=symm)
         return c
 
-    def conv7x7(self, in_planes, out_planes, stride=1):
+    def conv7x7(self, in_planes, out_planes, stride=1, first_or_last=False, symm=True):
         """7x7 convolution with padding"""
-        c = self.conv(7, in_planes, out_planes, stride=stride)
+        c = self.conv(7, in_planes, out_planes, stride=stride, first_or_last=first_or_last, symm=symm)
         return c
 
-    def conv5x5(self, in_planes, out_planes, stride=1):
+    def conv5x5(self, in_planes, out_planes, stride=1, first_or_last=False, symm=True):
         """5x5 convolution with padding"""
-        c = self.conv(5, in_planes, out_planes, stride=stride)
+        c = self.conv(5, in_planes, out_planes, stride=stride, first_or_last=first_or_last, symm=symm)
         return c
 
     def batchnorm(self, planes, last_bn=False):
@@ -69,8 +69,8 @@ class ResNetBuilder(object):
 
         return bn
 
-    def linear(self, in_planes, out_planes):
-        return self.config['linear'](in_planes, out_planes)
+    def linear(self, in_planes, out_planes, first_or_last=False, symm=False):
+        return self.config['linear'](in_planes, out_planes, first_or_last=first_or_last, symm=symm)
 
     def activation(self):
         return self.config['activation']()
@@ -188,7 +188,7 @@ class ResNet(nn.Module):
     def __init__(self, builder, block, layers, num_classes=1000):
         self.inplanes = 64
         super(ResNet, self).__init__()
-        self.conv1 = builder.conv7x7(3, 64, stride=2)
+        self.conv1 = builder.conv7x7(3, 64, stride=2, first_or_last=True)
         self.bn1 = builder.batchnorm(64)
         self.relu = builder.activation()
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
@@ -197,7 +197,7 @@ class ResNet(nn.Module):
         self.layer3 = self._make_layer(builder, block, 256, layers[2], stride=2)
         self.layer4 = self._make_layer(builder, block, 512, layers[3], stride=2)
         self.avgpool = nn.AdaptiveAvgPool2d(1)
-        self.fc = builder.linear(512 * block.expansion, num_classes)
+        self.fc = builder.linear(512 * block.expansion, num_classes, first_or_last=True)
 
     def _make_layer(self, builder, block, planes, blocks, stride=1):
         downsample = None

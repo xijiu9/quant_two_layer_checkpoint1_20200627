@@ -94,12 +94,12 @@ def twolayer_linearsample(m1, m2, epoch):
     m2_len = torch.linalg.norm(m2, dim=1)
     vec_norm = m1_len.mul(m2_len)
 
-    mid = torch.sort(vec_norm)
-    mid = mid[0][epoch]
-    index = [x for x in range(len(vec_norm)) if vec_norm[x] >= mid]
+    # mid = torch.sort(vec_norm)
+    # mid = mid[0][epoch]
+    # index = [x for x in range(len(vec_norm)) if vec_norm[x] >= mid]
 
-    # index, norm_x = sample_index_from_bernouli(vec_norm)
-    # m1 = m1 / norm_x.unsqueeze(1)
+    index, norm_x = sample_index_from_bernouli(vec_norm)
+    m1 = m1 / norm_x.unsqueeze(1)
 
     m1, m2 = m1[index, :], m2[index, :]
 
@@ -110,14 +110,14 @@ def twolayer_convsample(m1, m2, epoch):
     m1_len, m2_len = m1.mean(dim=(2, 3)).square().sum(dim=1), m2.sum(dim=(2, 3)).square().sum(dim=1)
     vec_norm = m1_len.mul(m2_len)
     
-    mid = torch.sort(vec_norm)
-    mid = mid[0][epoch]
-    index = torch.nonzero((vec_norm >= mid)).squeeze()
+    # mid = torch.sort(vec_norm)
+    # mid = mid[0][epoch]
+    # index = torch.nonzero((vec_norm >= mid)).squeeze()
 
     # index = [x for x in range(len(vec_norm)) if vec_norm[x] >= mid]
 
-    # index, norm_x = sample_index_from_bernouli(vec_norm)
-    # m1 = m1 / norm_x.unsqueeze(1).unsqueeze(2).unsqueeze(3)
+    index, norm_x = sample_index_from_bernouli(vec_norm)
+    m1 = m1 / norm_x.unsqueeze(1).unsqueeze(2).unsqueeze(3)
 
     m1, m2 = m1[index, :], m2[index, :]
 
@@ -153,6 +153,7 @@ def sample_index_from_bernouli(x):
         # exit(0)
     if norm_x.max() > 1 or norm_x.min() < 0:
         typeflag = 'debug'
+        print("We change it to debug mode because of the Bernoulli")
     if typeflag == 'debug':
         with open("debug.txt", "a") as f:
             f.write("raw {} is {}\n".format(randflag, x))
@@ -166,42 +167,17 @@ def sample_index_from_bernouli(x):
             f.write("sample index {} is {}\n".format(randflag, sample_index))
     # index = [x for x in range(len(sample_index)) if sample_index[x] == 1]
     # try:
+    if sample_index.max() > 1 or sample_index.min() < 0:
+        print(sample_index)
+        print(x)
     index = torch.nonzero((sample_index == 1)).squeeze()
     if typeflag == 'debug':
         with open("debug.txt", "a") as f:
             f.write("index {} is {}\n".format(randflag, index))
-    print("bernoulli", x, '\n', index, '\n', norm_x, '\n', len(index))
+    # print("bernoulli", x, '\n', index, '\n', norm_x, '\n', len(index))
     return index, norm_x
 
-def twolayer_linearsample_debug(m1, m2, epoch):
 
-    m2 = torch.cat([m2, m2], dim=0)
-    m1_len = torch.linalg.norm(m1, dim=1)
-    m2_len = torch.linalg.norm(m2, dim=1)
-    vec_norm = m1_len.mul(m2_len)
-
-    mid = torch.sort(vec_norm)
-    mid = mid[0][epoch]
-    index = [x for x in range(len(vec_norm)) if vec_norm[x] >= mid]
-
-    m1, m2 = m1[index, :], m2[index, :]
-
-    return m1, m2
-
-def twolayer_convsample_debug(m1, m2, epoch):
-    # print(m1.mean(), m1.max(), m1.min(), m2.mean(), m2.max(), m2.min())
-    m1_len, m2_len = m1.mean(dim=(2, 3)).square().sum(dim=1), m2.sum(dim=(2, 3)).square().sum(dim=1)
-    vec_norm = m1_len.mul(m2_len)
-
-    mid = torch.sort(vec_norm)
-    mid = mid[0][epoch]
-    index = [x for x in range(len(vec_norm)) if vec_norm[x] >= mid]
-
-    print("epoch first ", index)
-
-    m1, m2 = m1[index, :], m2[index, :]
-
-    return m1, m2
 
 
 

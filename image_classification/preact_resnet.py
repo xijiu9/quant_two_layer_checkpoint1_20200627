@@ -16,11 +16,16 @@ class PreActBlock(nn.Module):
     def __init__(self, builder, inplanes, planes, stride=1, downsample=None):
         super(PreActBlock, self).__init__()
         self.bn1 = builder.batchnorm(inplanes)
-        self.relu = nn.ReLU(inplace=True)
-        self.conv1 = builder.conv3x3(inplanes, planes, stride)
         self.bn2 = builder.batchnorm(planes, last_bn=True)
-        self.conv2 = builder.conv3x3(planes, planes)
-        self.downsample = downsample
+        self.relu = nn.ReLU(inplace=True)
+        if downsample is not None:
+            self.conv1 = builder.conv3x3(inplanes, planes, stride, symm=False)
+            self.conv2 = builder.conv3x3(planes, planes, symm=False)
+            self.downsample = downsample
+        else:
+            self.conv1 = builder.conv3x3(inplanes, planes, stride, symm=False)
+            self.conv2 = builder.conv3x3(planes, planes, symm=False)
+            self.downsample = downsample
         self.stride = stride
         self.debug = False
 
@@ -29,16 +34,16 @@ class PreActBlock(nn.Module):
 
         out = self.bn1(x)
         out = self.relu(out)
-
+        # print("start")
         if self.downsample is not None:
             residual = self.downsample(out)
-
+            # print("downsample")
         if self.debug:
             out.retain_grad()
             self.conv1_in = out
 
         out = self.conv1(out)
-
+        # print("conv1")
         if self.debug:
             out.retain_grad()
             self.conv1_out = out
@@ -51,7 +56,7 @@ class PreActBlock(nn.Module):
             self.conv2_in = out
 
         out = self.conv2(out)
-
+        # print("conv2")
         if self.debug:
             out.retain_grad()
             self.conv2_out = out
@@ -133,20 +138,20 @@ class PreActResNet(nn.Module):
         super(PreActResNet, self).__init__()
         self.inplanes = 16
         self.builder = builder
-        self.conv1 = builder.conv3x3(3, 16)
+        self.conv1 = builder.conv3x3(3, 16, first_or_last=True)
         self.layer1 = self._make_layer(block, 16, num_blocks[0])
         self.layer2 = self._make_layer(block, 32, num_blocks[1], stride=2)
         self.layer3 = self._make_layer(block, 64, num_blocks[2], stride=2)
         self.bn = builder.batchnorm(64 * block.expansion)
         self.relu = nn.ReLU(inplace=True)
         self.avgpool = nn.AvgPool2d(8, stride=1)
-        self.fc = builder.linear(64 * block.expansion, num_classes)
+        self.fc = builder.linear(64 * block.expansion, num_classes, first_or_last=True, symm=False)
 
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
-                self.builder.conv1x1(self.inplanes, planes * block.expansion, stride=stride)
+                self.builder.conv1x1(self.inplanes, planes * block.expansion, stride=stride, symm=False)
             )
 
         layers = []
@@ -157,18 +162,21 @@ class PreActResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
+        # print("start")
         x = self.conv1(x)
-
+        # print("conv1")
         x = self.layer1(x)
+        # print("layer1")
         x = self.layer2(x)
+        # print("layer2")
         x = self.layer3(x)
-
+        # print("layer3")
         x = self.bn(x)
         x = self.relu(x)
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
-
+        # print("fc")
         return x
 
     def set_debug(self, debug):

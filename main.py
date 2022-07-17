@@ -71,7 +71,7 @@ def add_parser_arguments(parser):
     parser.add_argument('--optimizer-batch-size', default=-1, type=int,
                         metavar='N', help='size of a total batch size, for simulating bigger batches')
 
-    parser.add_argument('--lr', '--learning-rate', default=0.512, type=float,
+    parser.add_argument('--lr', '--learning-rate', default=0.1, type=float,
                         metavar='LR', help='initial learning rate')
     parser.add_argument('--lr-schedule', default='cosine', type=str, metavar='SCHEDULE',
                         choices=['step', 'linear', 'cosine'])
@@ -79,14 +79,14 @@ def add_parser_arguments(parser):
     parser.add_argument('--warmup', default=20, type=int,
                         metavar='E', help='number of warmup epochs')
 
-    parser.add_argument('--label-smoothing', default=0.1, type=float,
+    parser.add_argument('--label-smoothing', default=0, type=float,
                         metavar='S', help='label smoothing')
     parser.add_argument('--mixup', default=0.0, type=float,
                         metavar='ALPHA', help='mixup alpha')
 
-    parser.add_argument('--momentum', default=0.875, type=float, metavar='M',
+    parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                         help='momentum')
-    parser.add_argument('--weight-decay', '--wd', default=3.0517578125e-05, type=float,
+    parser.add_argument('--weight-decay', '--wd', default=1e-4, type=float,
                         metavar='W', help='weight decay (default: 1e-4)')
     parser.add_argument('--bn-weight-decay', action='store_true',
                         help='use weight_decay on batch normalization learnable parameters, default: false)')
@@ -133,6 +133,9 @@ def add_parser_arguments(parser):
 
     parser.add_argument('--workspace', type=str, default='./')
 
+    parser.add_argument('--training-strategy', default='scratch', type=str, metavar='strategy',
+                        choices=['scratch', 'checkpoint', 'gradually', 'checkpoint_from_zero'])
+
     def str2bool(v):
         if isinstance(v, bool):
             return v
@@ -141,7 +144,7 @@ def add_parser_arguments(parser):
         elif v.lower() in ('no', 'false', 'f', 'n', '0'):
             return False
         else:
-            raise argparse.ArgumentTypeError('Boolean value expected.')
+            raise argparse.ArgumentTypeError('Boolean value expected in main. Actually is {}'.format(v))
 
     parser.add_argument('--qa', type=str2bool, default=True, help='quantize activation')
     parser.add_argument('--qw', type=str2bool, default=True, help='quantize weights')
@@ -157,7 +160,19 @@ def add_parser_arguments(parser):
     parser.add_argument('--persample', type=str2bool, default=False, help='per-sample quantization of gradients')
     parser.add_argument('--hadamard', type=str2bool, default=False, help='apply Hadamard transformation on gradients')
     parser.add_argument('--biprecision', type=str2bool, default=True, help='Gradient bifurcation')
-    parser.add_argument('--twolayersweight', type=str2bool, default=True, help='use two 4 bit to simulate a 8 bit')
+    parser.add_argument('--twolayersweight', type=str2bool, default=False, help='use two 4 bit to simulate a 8 bit')
+    parser.add_argument('--lsqforward', type=str2bool, default=False, help='apply LSQ')
+
+
+def load_my_state_dict(self, state_dict):
+    own_state = self.state_dict()
+    for name, param in state_dict.items():
+        if name not in own_state:
+            continue
+        if isinstance(param, Parameter):
+            # backwards compatibility for serialized parameters
+            param = param.data
+        own_state[name].copy_(param)
 
 
 def main(args):
@@ -176,6 +191,7 @@ def main(args):
     config.biased = args.biased
     config.biprecision = args.biprecision
     config.twolayer_weight = args.twolayersweight
+    config.lsqforward = args.lsqforward
     init(args.batch_size)
 
     exp_start_time = time.time()
@@ -249,6 +265,8 @@ def main(args):
             optimizer_state = checkpoint['optimizer']
             print("=> loaded checkpoint '{}' (epoch {})"
                   .format(args.resume, checkpoint['epoch']))
+            if args.training_strategy == "checkpoint_from_zero":
+                args.start_epoch = 0
         else:
             print("=> no checkpoint found at '{}'".format(args.resume))
             model_state = None
@@ -347,7 +365,7 @@ def main(args):
         skip_training=args.evaluate, skip_validation=args.training_only,
         # skip_training=True, skip_validation=True,
         save_checkpoints=args.save_checkpoints and not args.evaluate, checkpoint_dir=args.workspace, args=args,
-        config=config)
+        config=config, training_strategy=args.training_strategy)
     exp_duration = time.time() - exp_start_time
     if not torch.distributed.is_initialized() or torch.distributed.get_rank() == 0:
         logger.end()

@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 import matplotlib.pyplot as plt
+from torch.nn.parameter import Parameter
 from . import logger as log
 from . import resnet as models
 from . import utils
@@ -40,7 +41,9 @@ class ModelAndLoss(nn.Module):
 
         if cuda:
             criterion = criterion.cuda()
-        # print(model)
+        # with open("network.txt", "w") as f:
+        #     f.write("{}".format(model))
+        # exit(0)
         self.model = model
         self.loss = criterion
 
@@ -55,7 +58,18 @@ class ModelAndLoss(nn.Module):
 
     def load_model_state(self, state):
         if not state is None:
-            self.model.load_state_dict(state)
+            try:
+                self.model.load_state_dict(state)
+            except:
+                own_state = self.model.state_dict()
+                for name, param in state.items():
+                    if name not in own_state:
+                        continue
+                    if isinstance(param, Parameter):
+                        # backwards compatibility for serialized parameters
+                        param = param.data
+                    own_state[name].copy_(param)
+
 
 
 def get_optimizer(parameters, fp16, lr, momentum, weight_decay,
@@ -333,12 +347,13 @@ def train_loop(model_and_loss, optimizer, lr_scheduler, train_loader, val_loader
                should_backup_checkpoint, use_amp=False,
                batch_size_multiplier=1,
                best_prec1=0, start_epoch=0, prof=-1, skip_training=False, skip_validation=False, save_checkpoints=True,
-               checkpoint_dir='./', args=None, config=None):
+               checkpoint_dir='./', args=None, config=None, training_strategy="scratch"):
     prec1 = -1
     valid_history, epoch_history = [], []
     epoch_iter = range(start_epoch, epochs)
     if logger is not None:
         epoch_iter = logger.epoch_generator_wrapper(epoch_iter)
+
     for epoch in epoch_iter:
         print('Epoch ', epoch)
         try:
@@ -346,6 +361,8 @@ def train_loop(model_and_loss, optimizer, lr_scheduler, train_loader, val_loader
         except:
             pass
         config.epoch = epoch
+        if training_strategy == "gradually":
+            config.update_awbits(epoch, epochs)
         start = time.time()
         if not skip_training:
             train(train_loader, model_and_loss, optimizer, lr_scheduler, fp16, logger, epoch, use_amp=use_amp,
@@ -357,7 +374,7 @@ def train_loop(model_and_loss, optimizer, lr_scheduler, train_loader, val_loader
                              register_metrics=epoch == start_epoch)
             is_best = (prec1 > best_prec1)
             best_prec1 = max(prec1, best_prec1)
-            
+
             valid_history.append(prec1)
             epoch_history.append(epoch)
             plt.figure(1)
@@ -384,7 +401,7 @@ def train_loop(model_and_loss, optimizer, lr_scheduler, train_loader, val_loader
 
         if not torch.distributed.is_initialized() or torch.distributed.get_rank() == 0:
             logger.end()
-
+    print(valid_history)
     if skip_training:
         # fast_dump_2(model_and_loss, optimizer, train_loader, checkpoint_dir)
         # dump(model_and_loss, optimizer, train_loader, checkpoint_dir)

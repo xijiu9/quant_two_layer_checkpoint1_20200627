@@ -2,6 +2,7 @@ from collections import namedtuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn.parameter import Parameter
 from torch.autograd.function import InplaceFunction, Function
 
 import matplotlib.pyplot as plt
@@ -11,12 +12,12 @@ from tqdm import trange
 
 try:
     from image_classification.preconditioner import ScalarPreconditioner, DiagonalPreconditioner, \
-        BlockwiseHouseholderPreconditioner, ScalarPreconditionerAct, TwoLayerWeightPreconditioner
+        BlockwiseHouseholderPreconditioner, ScalarPreconditionerAct, TwoLayerWeightPreconditioner, lsq_per_tensor
     from image_classification.utils import twolayer_linearsample, twolayer_convsample
 except:
-    from utils import twolayer_linearsample, twolayer_convsample, sample_index_from_bernouli, twolayer_linearsample_debug, twolayer_convsample_debug
+    from utils import twolayer_linearsample, twolayer_convsample, sample_index_from_bernouli
     from preconditioner import ScalarPreconditioner, DiagonalPreconditioner, \
-        BlockwiseHouseholderPreconditioner, ScalarPreconditionerAct, TwoLayerWeightPreconditioner
+        BlockwiseHouseholderPreconditioner, ScalarPreconditionerAct, TwoLayerWeightPreconditioner, lsq_per_tensor
 
 
 class QuantizationConfig:
@@ -38,22 +39,38 @@ class QuantizationConfig:
         self.hadamard = False
         self.biprecision = True
         self.twolayer_weight = False
+        self.lsqforward = False
         self.epoch = 0
 
+    def update_awbits(self, epoch, epochs):
+        if epoch / epochs <= 0.1:
+            self.activation_num_bits = 8
+            self.weight_num_bits = 8
+        if epoch / epochs > 0.1:
+            self.activation_num_bits = 7
+            self.weight_num_bits = 7
+        if epoch / epochs > 0.2:
+            self.activation_num_bits = 6
+            self.weight_num_bits = 6
+        if epoch / epochs > 0.4:
+            self.activation_num_bits = 5
+            self.weight_num_bits = 5
+        if epoch / epochs > 0.6:
+            self.activation_num_bits = 4
+            self.weight_num_bits = 4
+
+        print("change activation to {}, weight to {}".format(self.activation_num_bits, self.weight_num_bits))
+
     def activation_preconditioner(self):
-        # return lambda x: ForwardPreconditioner(x, self.activation_num_bits)
         return lambda x: ScalarPreconditionerAct(x, self.activation_num_bits)
-        # return lambda x: ScalarPreconditioner(x, 16)
 
     def weight_preconditioner(self):
         return lambda x: ScalarPreconditioner(x, self.weight_num_bits)
-        # return lambda x: ForwardPreconditioner(x, self.weight_num_bits)
-        # return lambda x: DiagonalPreconditioner(x, self.weight_num_bits)
 
     def bias_preconditioner(self):
         return lambda x: ScalarPreconditioner(x, self.bias_num_bits)
 
-    def activation_gradient_preconditioner(self):
+    def activation_gradient_preconditioner(self, transtype=''):
         if self.hadamard:
             return lambda x: BlockwiseHouseholderPreconditioner(x, self.backward_num_bits)
         if self.backward_persample:
@@ -61,16 +78,11 @@ class QuantizationConfig:
         else:
             return lambda x: ScalarPreconditioner(x, self.backward_num_bits)
 
-    def weight_gradient_preconditioner(self, layertype=''):
-        # if self.backward_persample:
-        #     return lambda x: DiagonalPreconditioner(x, self.bweight_num_bits, left=False)
+    def weight_gradient_preconditioner(self, transtype=''):
         if self.twolayer_weight:
-            if layertype == 'linear' or layertype == 'conv':
-                # if layertype == 'linear':
-                return lambda x: TwoLayerWeightPreconditioner(x, self.bweight_num_bits_l)
-        # else:
-        return lambda x: ScalarPreconditioner(x, self.bweight_num_bits)
+            return lambda x: TwoLayerWeightPreconditioner(x, self.bweight_num_bits_l)
 
+        return lambda x: ScalarPreconditioner(x, self.bweight_num_bits)
 
 config = QuantizationConfig()
 
@@ -137,7 +149,7 @@ class conv2d_act(Function):
     def backward(ctx, grad_output):
         # torch.save(grad_output, 'image_classification/ckpt/grad_output_conv_180.pt')
         # print(grad_output.mean(), grad_output.max(), grad_output.min())
-        grad_output_weight_condi = quantize(grad_output, config.weight_gradient_preconditioner(layertype='conv'),
+        grad_output_weight_condi = quantize(grad_output, config.weight_gradient_preconditioner(),
                                             stochastic=True)
         grad_output_active_condi = quantize(grad_output, config.activation_gradient_preconditioner(), stochastic=True)
         input, weight, bias = ctx.saved
@@ -188,7 +200,7 @@ class linear_act(Function):
         torch.set_printoptions(profile="full", linewidth=160)
         # torch.save(grad_output, 'image_classification/ckpt/grad_output_linear_0.pt')
         grad_output_weight_conditioner = quantize(grad_output,
-                                                  config.weight_gradient_preconditioner(layertype='linear'),
+                                                  config.weight_gradient_preconditioner(),
                                                   stochastic=True)
         grad_output_active_conditioner = quantize(grad_output, config.activation_gradient_preconditioner(),
                                                   stochastic=True)
@@ -224,6 +236,43 @@ class linear_act(Function):
         return grad_input, grad_weight, grad_bias
 
 
+class LSQPerTensor(nn.Module):
+    def __init__(self, bits, symm=True, inputtype=''):
+        super(LSQPerTensor, self).__init__()
+        self.bits = bits
+        self.symm = symm
+        self.step_size = Parameter(torch.tensor(1.0), requires_grad=config.lsqforward)
+        self.initialized = False
+        self.inputtype = inputtype
+
+    def forward(self, x):
+        if not self.initialized:
+            with torch.no_grad():
+                num_bins = 2 ** self.bits - 1
+                step_size = 2 * x.abs().mean() / np.sqrt(num_bins)
+                self.step_size.copy_(step_size) # LSQ type
+
+                self.initialized = True
+        if x.min() < 0 and x.max() > 0 and not self.symm:
+            print("!!!!!!!!!!!!!")
+            print(x)
+            exit(0)
+        return lsq_per_tensor().apply(x, self.step_size, config.epoch, self.bits, self.symm)
+
+    def quantize_MSE(self, input, scale, bits, symm):
+        num_bins = 2 ** bits - 1
+        bias = -num_bins / 2 if symm else 0
+
+        # Forward
+        eps = 1e-7
+        scale = scale + eps
+        transformed = input / scale - bias
+        vbar = torch.clamp(transformed, 0.0, num_bins).round()
+        quantized = (vbar + bias) * scale
+
+        MSE = (quantized - input).square().sum()
+        return MSE
+
 class QuantMeasure(nn.Module):
     """docstring for QuantMeasure."""
 
@@ -242,22 +291,34 @@ class QConv2d(nn.Conv2d):
     """docstring for QConv2d."""
 
     def __init__(self, in_channels, out_channels, kernel_size,
-                 stride=1, padding=0, dilation=1, groups=1, bias=True):
+                 stride=1, padding=0, dilation=1, groups=1, bias=True, first_or_last=False, symm=True):
         super(QConv2d, self).__init__(in_channels, out_channels, kernel_size,
                                       stride, padding, dilation, groups, bias)
         self.quantize_input = QuantMeasure()
+        self.first_or_last = first_or_last
+        if first_or_last:
+            print("ohhhhhhh conv")
+        if config.lsqforward and not self.first_or_last:
+            self.lsqweight = LSQPerTensor(config.weight_num_bits, inputtype="weight")
+            self.lsqactive = LSQPerTensor(config.activation_num_bits, symm=symm, inputtype="activation")
 
     def forward(self, input):
         if config.acts is not None:
             config.acts.append(input.detach().cpu().numpy())
 
         if config.quantize_activation:
-            qinput = self.quantize_input(input)
+            if config.lsqforward:
+                qinput = self.lsqactive(input)
+            else:
+                qinput = self.quantize_input(input)
         else:
             qinput = input
 
         if config.quantize_weights:  # TODO weight quantization scheme...
-            qweight = quantize(self.weight, config.weight_preconditioner())
+            if config.lsqforward:
+                qweight = self.lsqweight(self.weight)
+            else:
+                qweight = quantize(self.weight, config.weight_preconditioner())
             qbias = self.bias
         else:
             qweight = self.weight
@@ -278,22 +339,31 @@ class QConv2d(nn.Conv2d):
 class QLinear(nn.Linear):
     """docstring for QConv2d."""
 
-    def __init__(self, in_features, out_features, bias=True, ):
+    def __init__(self, in_features, out_features, bias=True, first_or_last=False, symm=True):
         super(QLinear, self).__init__(in_features, out_features, bias)
         self.quantize_input = QuantMeasure()
+        self.first_or_last = first_or_last
+        if first_or_last:
+            print("ohhhhhhh linear")
+        if config.lsqforward and not self.first_or_last:
+            self.lsqweight = LSQPerTensor(config.weight_num_bits, inputtype="weight")
+            self.lsqactive = LSQPerTensor(config.activation_num_bits, symm=symm, inputtype="activation")
 
     def forward(self, input):
         if config.quantize_activation:
-            qinput = self.quantize_input(input)
+            if config.lsqforward:
+                qinput = self.lsqactive(input)
+            else:
+                qinput = self.quantize_input(input)
         else:
             qinput = input
 
-        if config.quantize_weights:
-            qweight = quantize(self.weight, config.weight_preconditioner())
-            if self.bias is not None:
-                qbias = quantize(self.bias, config.bias_preconditioner())
+        if config.quantize_weights:  # TODO weight quantization scheme...
+            if config.lsqforward:
+                qweight = self.lsqweight(self.weight)
             else:
-                qbias = None
+                qweight = quantize(self.weight, config.weight_preconditioner())
+            qbias = self.bias
         else:
             qweight = self.weight
             qbias = self.bias
@@ -411,8 +481,9 @@ if __name__ == '__main__':
 
         input_sample, grad_output_weight_condi_sample = twolayer_convsample(torch.cat([inputt, inputt], dim=0),
                                                                             grad_output_2, epoch=0)
-        input_sample_debug, grad_output_weight_condi_sample_debug = twolayer_convsample_debug(torch.cat([inputt, inputt], dim=0),
-                                                                            grad_output_2, epoch=int(the_type))
+        input_sample_debug, grad_output_weight_condi_sample_debug = twolayer_convsample_debug(
+            torch.cat([inputt, inputt], dim=0),
+            grad_output_2, epoch=int(the_type))
         # grad_weight_2 = grad_output_2.t().mm(torch.cat([inputs, inputs], dim=0))
         _, grad_weight_2 = ext_backward_func.cudnn_convolution_backward(
             input_sample, grad_output_weight_condi_sample, weight, padding, stride, dilation, groups,
@@ -472,4 +543,3 @@ if __name__ == '__main__':
     print("bias_output_2  ", bias_output_2.mean(), bias_output_2.abs().mean())
     bias_weight_2_d = grad_weight_2_d - full_grad_weight
     print("bias_weight_2d ", bias_weight_2_d.mean(), bias_weight_2_d.abs().mean())
-

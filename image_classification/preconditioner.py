@@ -3,6 +3,7 @@ import math
 import time
 import pytorch_minimax
 from quantizers import get_transform
+import numpy as np
 
 
 def householder(src, tar):
@@ -288,4 +289,42 @@ class TwoLayerWeightPreconditioner(Preconditioner):
         # print("input is {}, dequantize is {}, difference is ".format(x, dequantize, x-dequantize))
         return dequantize
 
+
+
+class lsq_per_tensor(torch.autograd.Function):
+
+    @staticmethod
+    def forward(ctx, input, scale, epoch, bits, symm):
+        num_bins = 2 ** bits - 1
+        bias = -num_bins / 2 if symm else 0
+        num_features = input.numel()
+        grad_scale = 1.0 / np.sqrt(num_features * num_bins)
+        # grad_scale = 1.0 / np.sqrt(num_features)
+
+        # Forward
+        eps = 1e-7
+        scale = scale + eps
+        transformed = input / scale - bias
+        vbar = torch.clamp(transformed, 0.0, num_bins).round()
+        quantized = (vbar + bias) * scale
+
+        # Step size gradient
+        error = vbar - transformed
+        mask = torch.logical_and(transformed >= 0, transformed <= num_bins)
+        case1 = (transformed < 0).float() * bias
+        case2 = mask.float() * error
+        case3 = (transformed > num_bins).float() * (bias + num_bins)
+        # TODO gradient scale might be too small, so optimizing without AdaGrad might be problematic...
+        ss_gradient = (case1 + case2 + case3) * grad_scale  # * 100 * scale
+        ctx.save_for_backward(mask, ss_gradient)
+        ctx.epoch = epoch
+        return quantized
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        mask, ss_gradient = ctx.saved_tensors
+        epoch = ctx.epoch
+        if epoch < 20:
+            return grad_output * mask.float(), (grad_output * ss_gradient).sum() * epoch / 20, None, None, None
+        return grad_output * mask.float(), (grad_output * ss_gradient).sum(), None, None, None
 
