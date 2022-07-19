@@ -38,6 +38,7 @@ class QuantizationConfig:
         self.acts = None
         self.hadamard = False
         self.biprecision = True
+        self.freeze_step = 0
         self.twolayer_weight = False
         self.lsqforward = False
         self.epoch = 0
@@ -257,7 +258,7 @@ class LSQPerTensor(nn.Module):
             print("!!!!!!!!!!!!!")
             print(x)
             exit(0)
-        return lsq_per_tensor().apply(x, self.step_size, config.epoch, self.bits, self.symm)
+        return lsq_per_tensor().apply(x, self.step_size, config, self.bits, self.symm, self.inputtype)
 
     def quantize_MSE(self, input, scale, bits, symm):
         num_bins = 2 ** bits - 1
@@ -296,6 +297,7 @@ class QConv2d(nn.Conv2d):
                                       stride, padding, dilation, groups, bias)
         self.quantize_input = QuantMeasure()
         self.first_or_last = first_or_last
+        self.symm=symm
         if first_or_last:
             print("ohhhhhhh conv")
         if config.lsqforward and not self.first_or_last:
@@ -306,7 +308,7 @@ class QConv2d(nn.Conv2d):
         if config.acts is not None:
             config.acts.append(input.detach().cpu().numpy())
 
-        if config.quantize_activation:
+        if config.quantize_activation and not self.first_or_last:
             if config.lsqforward:
                 qinput = self.lsqactive(input)
             else:
@@ -314,7 +316,7 @@ class QConv2d(nn.Conv2d):
         else:
             qinput = input
 
-        if config.quantize_weights:  # TODO weight quantization scheme...
+        if config.quantize_weights and not self.first_or_last:  # TODO weight quantization scheme...
             if config.lsqforward:
                 qweight = self.lsqweight(self.weight)
             else:
@@ -350,7 +352,8 @@ class QLinear(nn.Linear):
             self.lsqactive = LSQPerTensor(config.activation_num_bits, symm=symm, inputtype="activation")
 
     def forward(self, input):
-        if config.quantize_activation:
+
+        if config.quantize_activation and not self.first_or_last:
             if config.lsqforward:
                 qinput = self.lsqactive(input)
             else:
@@ -358,7 +361,7 @@ class QLinear(nn.Linear):
         else:
             qinput = input
 
-        if config.quantize_weights:  # TODO weight quantization scheme...
+        if config.quantize_weights and not self.first_or_last:  # TODO weight quantization scheme...
             if config.lsqforward:
                 qweight = self.lsqweight(self.weight)
             else:
@@ -383,10 +386,10 @@ class QBatchNorm2D(nn.BatchNorm2d):
 
     def forward(self, input):  # TODO: weight is not quantized
         self._check_input_dim(input)
-        if config.quantize_activation:
-            qinput = self.quantize_input(input)
-        else:
-            qinput = input
+        # if config.quantize_activation:
+        #     qinput = self.quantize_input(input)
+        # else:
+        qinput = input
 
         qweight = self.weight
         qbias = self.bias

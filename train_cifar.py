@@ -21,9 +21,10 @@ parser.add_argument('--training-strategy', default='scratch', type=str, metavar=
                     choices=['scratch', 'checkpoint', 'gradually', 'checkpoint_from_zero'])
 parser.add_argument('--weight-decay', '--wd', default=1e-4, type=float,
                     metavar='W', help='weight decay (default: 1e-4)')
+parser.add_argument('--freeze-step', type=int, default=0, help='freeze or not the step size update')
 args = parser.parse_args()
 method = 'twolayer'
-model = "results/{}/models/checkpoint-195.pth.tar".format(method)
+model = "results/{}/models/checkpoint-180.pth.tar".format(method)
 workplace = "results/" + method
 if not os.path.exists(workplace):
     os.mkdir(workplace)
@@ -47,22 +48,22 @@ if args.lsqforward:
 if args.training_strategy == 'checkpoint' or args.training_strategy == "checkpoint_from_zero":
     os.system("python main.py --dataset cifar10 --arch preact_resnet56 --gather-checkpoints --workspace results/{} "
               "--twolayersweight {} --lsqforward {} {} ~/data/cifar10 --abits {} --wbits {} --weight-decay {} "
-              "--training-strategy {} "
+              "--training-strategy {} --freeze-step {} "
               "--resume {}".format(method,
                                    args.twolayersweight,
                                    args.lsqforward, arg,
                                    args.awbits,
                                    args.awbits,
                                    args.weight_decay,
-                                   args.training_strategy,
+                                   args.training_strategy, args.freeze_step,
                                    model))
 else:
     os.system("python main.py --dataset cifar10 --arch preact_resnet56 --gather-checkpoints --workspace results/{} "
               "--twolayersweight {} --lsqforward {} {} ~/data/cifar10 --abits {} --wbits {} --weight-decay {} "
-              "--training-strategy {}".format(method, args.twolayersweight,
+              "--training-strategy {} --freeze-step {}".format(method, args.twolayersweight,
                                               args.lsqforward, arg, args.awbits,
                                               args.awbits, args.weight_decay,
-                                              args.training_strategy))
+                                              args.training_strategy, args.freeze_step))
     # {} ~/data/cifar10 --resume {}".format(args.twolayersweight, args.lsqforward, method, arg, model))
 
 # elif args.net == 'psq':

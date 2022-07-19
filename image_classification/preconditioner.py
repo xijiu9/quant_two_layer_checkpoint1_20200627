@@ -294,7 +294,7 @@ class TwoLayerWeightPreconditioner(Preconditioner):
 class lsq_per_tensor(torch.autograd.Function):
 
     @staticmethod
-    def forward(ctx, input, scale, epoch, bits, symm):
+    def forward(ctx, input, scale, config, bits, symm, inputtype=''):
         num_bins = 2 ** bits - 1
         bias = -num_bins / 2 if symm else 0
         num_features = input.numel()
@@ -317,14 +317,14 @@ class lsq_per_tensor(torch.autograd.Function):
         # TODO gradient scale might be too small, so optimizing without AdaGrad might be problematic...
         ss_gradient = (case1 + case2 + case3) * grad_scale  # * 100 * scale
         ctx.save_for_backward(mask, ss_gradient)
-        ctx.epoch = epoch
+        ctx.others = config, inputtype
         return quantized
 
     @staticmethod
     def backward(ctx, grad_output):
         mask, ss_gradient = ctx.saved_tensors
-        epoch = ctx.epoch
-        if epoch < 20:
-            return grad_output * mask.float(), (grad_output * ss_gradient).sum() * epoch / 20, None, None, None
-        return grad_output * mask.float(), (grad_output * ss_gradient).sum(), None, None, None
+        config, inputtype = ctx.others
+        # if config.epoch < config.freeze_step and inputtype == "activation":
+        #     return grad_output * mask.float(), (grad_output * ss_gradient).sum() * config.epoch / config.freeze_step, None, None, None, None
+        return grad_output * mask.float(), (grad_output * ss_gradient).sum(), None, None, None, None
 

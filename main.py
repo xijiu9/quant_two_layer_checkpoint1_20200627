@@ -160,6 +160,7 @@ def add_parser_arguments(parser):
     parser.add_argument('--persample', type=str2bool, default=False, help='per-sample quantization of gradients')
     parser.add_argument('--hadamard', type=str2bool, default=False, help='apply Hadamard transformation on gradients')
     parser.add_argument('--biprecision', type=str2bool, default=True, help='Gradient bifurcation')
+    parser.add_argument('--freeze-step', type=int, default=0, help='freeze or not the step size update')
     parser.add_argument('--twolayersweight', type=str2bool, default=False, help='use two 4 bit to simulate a 8 bit')
     parser.add_argument('--lsqforward', type=str2bool, default=False, help='apply LSQ')
 
@@ -190,6 +191,7 @@ def main(args):
     config.hadamard = args.hadamard
     config.biased = args.biased
     config.biprecision = args.biprecision
+    config.freeze_step = args.freeze_step
     config.twolayer_weight = args.twolayersweight
     config.lsqforward = args.lsqforward
     init(args.batch_size)
